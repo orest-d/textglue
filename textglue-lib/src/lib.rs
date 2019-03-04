@@ -131,6 +131,10 @@ impl Database{
         self
     }
 
+    pub fn tidy(&mut self) -> &mut Database{
+        self.fill().remove_undefined_snippets_from_documents()
+    }
+
     pub fn new_document<'a>(&'a mut self, id:&str, name:&str) -> &'a mut Document{
         self.documents.insert(id.to_string(), Document::new(name));
         self.documents.get_mut(id).unwrap()
@@ -144,9 +148,59 @@ impl Database{
             self.new_document("document", "Document")
         }
     }
-    pub fn to_json(&self) -> serde_json::Result<String>{
+    pub fn to_pretty_json(&self) -> serde_json::Result<String>{
         serde_json::to_string_pretty(self)
     }
+    pub fn to_json(&self) -> serde_json::Result<String>{
+        serde_json::to_string(self)
+    }
+    pub fn from_json(json:&str) -> serde_json::Result<Database>{
+        serde_json::from_str(json)
+    }
+    pub fn clear(&mut self) -> &mut Database{
+        self.snippets.clear();
+        self.metadata.clear();
+        self.documents.clear();
+        self
+    }
+
+    pub fn update_with_draining(&mut self, db:& mut Database) -> &mut Database{
+        db.snippets.drain().map(
+            |(key,value)|{
+                self.snippets.insert(key,value);
+            }
+        );
+        db.metadata.drain().map(
+            |(key,value)|{
+                self.metadata.insert(key,value);
+            }
+        );
+        db.documents.drain().map(
+            |(key,value)|{
+                self.documents.insert(key,value);
+            }
+        );
+        self
+    }
+    pub fn update_with(&mut self, db:&Database) -> &mut Database{
+        db.snippets.iter().map(
+            |(key,value)|{
+                self.snippets.insert(key.clone(),value.clone());
+            }
+        );
+        db.metadata.iter().map(
+            |(key,value)|{
+                self.metadata.insert(key.clone(),value.clone());
+            }
+        );
+        db.documents.iter().map(
+            |(key,value)|{
+                self.documents.insert(key.clone(),value.clone());
+            }
+        );
+        self
+    }
+
 }
 
 
