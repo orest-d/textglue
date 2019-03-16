@@ -141,17 +141,16 @@ pub fn files(dir: &str) -> Vec<String>{
 
 
 fn main() {
-    println!("Hello, world!");
-    let directory = files(".");
-    for (i,p) in directory.iter().enumerate(){
-        println!("{} {:?}",i,p);
-
-    }
+//    println!("Hello, world!");
+//    let directory = files(".");
+//    for (i,p) in directory.iter().enumerate(){
+//        println!("{} {:?}",i,p);
+//    }
     let mut db:Database = FileRepository::new().load().unwrap();
     db.fill().remove_undefined_snippets_from_documents();
     db.document().add_chapter("Introduction").add_snippet("Intro");
     FileRepository::new().save_to_directory(&db, "md1");
-    println!("{}",serde_json::to_string_pretty(&db).unwrap());
+//    println!("{}",serde_json::to_string_pretty(&db).unwrap());
     
     server::new(|| App::with_state(FileRepository::new().load().unwrap())
         .resource("/", |r| r.f(index))
@@ -164,6 +163,24 @@ fn main() {
             HttpResponse::Ok()
             .content_type("application/json")
             .body(FileRepository::new().load().unwrap().to_json().unwrap())
+        }))
+        .resource("/index.html", |r| r.f(|r| {
+            const content: &'static [u8] = include_bytes!("../../textglue-wasm/www/app.html");
+            HttpResponse::Ok()
+            .content_type("text/html")
+            .body(content)
+        }))
+        .resource("/textglue_wasm.js", |r| r.f(|r| {
+            const content: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm.js");
+            HttpResponse::Ok()
+            .content_type("application/javascript")
+            .body(content)
+        }))
+        .resource("/textglue_wasm_bg.wasm", |r| r.f(|r| {
+            const content: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm_bg.wasm");
+            HttpResponse::Ok()
+            .content_type("application/wasm")
+            .body(content)
         }))
     )
     .bind("127.0.0.1:8088")
