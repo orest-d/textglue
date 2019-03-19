@@ -5,17 +5,31 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
 
+extern crate actix;
 extern crate actix_web;
+extern crate futures;
 extern crate textglue_lib;
 
 use textglue_lib::*;
-use actix_web::{server, App, HttpRequest, HttpResponse, http::ContentEncoding};
+//use actix_web::{
+//    dev, server, multipart, error, http, App, Error, HttpRequest, HttpResponse, FutureResponse, http::ContentEncoding};
+use actix_web::{
+    dev, error, http, middleware, multipart, server, App, Error, FutureResponse,
+    HttpMessage, HttpRequest, HttpResponse,
+};
 
 use std::collections::{HashMap,HashSet};
+
+use futures::future;
+use futures::{Future, Stream};
+
+//use std::cell::Cell;
+
 
 use std::str::FromStr;
 use std::io::prelude::*;
 use std::io;
+use std::io::Write;
 use std::fs::{self,DirEntry,File};
 use std::path::{Path,PathBuf};
 
@@ -66,6 +80,11 @@ impl FileRepository{
 
     pub fn save(&self,db:&Database) -> std::io::Result<()>{
         self.save_to_directory(db, &self.directory)
+    }
+
+    pub fn save_json(&self,json:&str) {
+        let db:Database = serde_json::from_str(json).unwrap();
+        self.save(&db).unwrap();
     }
 
     pub fn save_to_directory(&self,db:&Database,directory:&str) -> std::io::Result<()>{
@@ -121,6 +140,7 @@ fn index<T>(_req: &HttpRequest<T>) -> &'static str {
     "Hello world!"
 }
 
+
 pub fn files(dir: &str) -> Vec<String>{
     fs::read_dir(dir)
     .expect("Directory unaccessible")
@@ -139,7 +159,46 @@ pub fn files(dir: &str) -> Vec<String>{
     }).flatten().collect()
 }
 
+pub fn handle_multipart_item(
+    item: multipart::MultipartItem<dev::Payload>,
+) -> Box<Stream<Item = Vec<u8>, Error = Error>> {
+    
+    match item {
+        multipart::MultipartItem::Field(field) => {
+            Box::new(field
+                .map_err(error::ErrorInternalServerError)
+                .concat()
+                .map(|bytes| bytes.to_vec()).into_stream()
+            )
+        },
+        multipart::MultipartItem::Nested(mp) => Box::new(
+            mp.map_err(error::ErrorInternalServerError)
+            .map(handle_multipart_item)
+            .flatten(),
+        ),
+    }
+}
 
+pub fn upload<T>(req: HttpRequest<T>) -> FutureResponse<HttpResponse> {
+    Box::new(
+        req.multipart()
+            .map_err(error::ErrorInternalServerError)
+            .map(handle_multipart_item)
+            .flatten()
+            .collect()
+            .map(|content| {
+                let b = content.concat();
+                if let Ok(s) = String::from_utf8(b){
+                    FileRepository::new().save_json(&s);
+                    HttpResponse::Ok().body("Saved")
+                }
+                else{
+                    HttpResponse::InternalServerError().reason("UTF8 decoding error").body("UTF8 decoding error")
+                }
+            }
+        )
+    )
+}
 fn main() {
 //    println!("Hello, world!");
 //    let directory = files(".");
@@ -182,6 +241,10 @@ fn main() {
             .content_type("application/wasm")
             .body(content)
         }))
+        .resource("/api/upload", |r| {
+                r.method(http::Method::GET).f(|r| {"Upload"});
+                r.method(http::Method::POST).with(upload);
+        })
     )
     .bind("127.0.0.1:8088")
     .unwrap()
