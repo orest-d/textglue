@@ -15,7 +15,7 @@ use textglue_lib::*;
 //    dev, server, multipart, error, http, App, Error, HttpRequest, HttpResponse, FutureResponse, http::ContentEncoding};
 use actix_web::{
     dev, error, http, middleware, multipart, server, App, Error, FutureResponse,
-    HttpMessage, HttpRequest, HttpResponse,
+    HttpMessage, HttpRequest, HttpResponse, Json
 };
 
 use std::collections::{HashMap,HashSet};
@@ -48,7 +48,7 @@ impl FileRepository{
             snippet_file_postfix:".txt".to_string(),
             metadata_file_postfix:".meta.yaml".to_string(),
             document_file_postfix:".doc.yaml".to_string(),
-            directory:"md".to_string(),
+            directory:"md2".to_string(),
             path:"textglue.json".to_string(),
         }
     }
@@ -189,6 +189,7 @@ pub fn upload<T>(req: HttpRequest<T>) -> FutureResponse<HttpResponse> {
             .map(|content| {
                 let b = content.concat();
                 if let Ok(s) = String::from_utf8(b){
+                    fs::write("uploaded.json",&s).unwrap();
                     FileRepository::new().save_json(&s);
                     HttpResponse::Ok().body("Saved")
                 }
@@ -198,6 +199,14 @@ pub fn upload<T>(req: HttpRequest<T>) -> FutureResponse<HttpResponse> {
             }
         )
     )
+}
+
+fn upload_json(db:Json<Database>) -> HttpResponse{
+    FileRepository::new().save(&db);
+
+    HttpResponse::Ok()
+            .content_type("text/plain")
+            .body("ok")    
 }
 fn main() {
 //    println!("Hello, world!");
@@ -209,6 +218,9 @@ fn main() {
     db.fill().remove_undefined_snippets_from_documents();
     db.document().add_chapter("Introduction").add_snippet("Intro");
     FileRepository::new().save_to_directory(&db, "md1");
+    
+    let s = fs::read_to_string("dbnow.json").unwrap();
+    let db:Database = serde_json::from_str(&s).unwrap();
 //    println!("{}",serde_json::to_string_pretty(&db).unwrap());
     
     server::new(|| App::with_state(FileRepository::new().load().unwrap())
@@ -245,6 +257,10 @@ fn main() {
                 r.method(http::Method::GET).f(|r| {"Upload"});
                 r.method(http::Method::POST).with(upload);
         })
+        .resource("/api/upload-json", |r|
+                r.method(http::Method::POST).with(upload_json)
+        )
+
     )
     .bind("127.0.0.1:8088")
     .unwrap()
