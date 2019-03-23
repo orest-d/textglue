@@ -49,81 +49,74 @@
     <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
     <script src='textglue_wasm.js'></script>
     <script type="module">
-        new Vue({
-            el: '#app',
-            data: {
-                tg: null,
-                loaded_wasm: false,
-                data: {},
-                status: "OK",
-                status_color: "",
-                message: ""
-            },
-            methods: {
-                error: function (message, reason) {
-                    if (message == "OK") {
-                        this.info(message);
-                    }
-                    else {
-                        this.status = "ERROR";
-                        this.status_color = "red";
+        console.log("start");
+        Vue.prototype.$tg = wasm_bindgen;
+        const run = async function () {
+            console.log("run");
+            await Vue.prototype.$tg('textglue_wasm_bg.wasm');
+            console.log("loaded");
+            new Vue({
+                el: '#app',
+                data: {
+                    tg: null,
+                    loaded_wasm: true,
+                    data: {},
+                    status: "OK",
+                    status_color: "",
+                    message: ""
+                },
+                methods: {
+                    error: function (message, reason) {
+                        if (message == "OK") {
+                            this.info(message);
+                        }
+                        else {
+                            this.status = "ERROR";
+                            this.status_color = "red";
+                            this.message = message;
+                            console.log("ERROR:" + message, reason);
+                        }
+                    },
+                    result: function (message) {
+                        if (message == "OK") {
+                            this.info(message);
+                        }
+                        else {
+                            this.error(message, "")
+                        }
+                    },
+                    info: function (message) {
+                        this.status = "OK";
+                        this.status_color = "green";
                         this.message = message;
-                        console.log("ERROR:" + message, reason);
+                        console.log("INFO:" + message);
+                    },
+                    load: function () {
+                        this.$http.get("/api/db.json").then(
+                            function (response) {
+                                response.text().then(
+                                    function (data) {
+                                        this.error(this.$tg.set_database_json(data));
+                                        this.data = this.$tg.get_database();
+                                    }.bind(this),
+                                    function (data) {
+                                        this.error("Loading error (response text)", err);
+                                    }.bind(this)
+                                )
+                            }.bind(this),
+                            function (err) {
+                                this.error("Loading error", err);
+                            }.bind(this)
+                        );
                     }
                 },
-                result: function (message) {
-                    if (message == "OK") {
-                        this.info(message);
-                    }
-                    else {
-                        this.error(message, "")
-                    }
-                },
-                info: function (message) {
-                    this.status = "OK";
-                    this.status_color = "green";
-                    this.message = message;
-                    console.log("INFO:" + message);
-                },
-                load: function () {
-                    this.$http.get("/api/dbnow.json").then(
-                        function (response) {
-                            response.text().then(
-                                function (data) {
-                                    this.error(this.tg.set_database_json(data));
-                                    this.data = this.tg.get_database();
-                                }.bind(this),
-                                function (data) {
-                                    this.error("Loading error (response text)", err);
-                                }.bind(this)
-                            )
-                        }.bind(this),
-                        function (err) {
-                            this.error("Loading error", err);
-                        }.bind(this)
-                    );
-                }
-            },
-            created: function () {
-                this.tg = wasm_bindgen;
-
-                const run = async function () {
-                    await wasm_bindgen('textglue_wasm_bg.wasm');
-                    //this.wasm.greet();
-                    //console.log(this.wasm.get_database());
-                    this.tg.set_snippet("abc", "lorem");
-                    //console.log(this.wasm.get_database());
-                    //console.log(this.wasm.get_snippet("abc"));
-                    //console.log(this.wasm.get_metadata("abc"));
-                    //console.log(this.wasm.set_metadata("abc", 123));
-                    //console.log(this.wasm.get_database_pretty_json());
-                    //console.log(this.wasm.set_database_json(this.wasm.get_database_pretty_json()));
-                    this.loaded_wasm = true;
+                created: function () {
+                    this.$tg.set_snippet("abc", "lorem");
                     this.load();
-                }.bind(this);
-                run();
-            }
-        });  
+                }
+            });
+        };
+        run();
     </script>
 </body>
 
