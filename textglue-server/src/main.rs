@@ -258,39 +258,9 @@ fn serve_database(request:&HttpRequest<FileRepository>) -> HttpResponse{
     }
 }
 
-fn main() {
-//    println!("Hello, world!");
-//    let directory = files(".");
-//    for (i,p) in directory.iter().enumerate(){
-//        println!("{} {:?}",i,p);
-//    }
-/*
-    let mut db:Database = FileRepository::new().load().unwrap();
-    db.fill().remove_undefined_snippets_from_documents();
-    db.document().add_chapter("Introduction").add_snippet("Intro");
-    FileRepository::new().save_to_directory(&db, "md1");
-*/  
-//    let s = fs::read_to_string("dbnow.json").unwrap();
-//    let db:Database = serde_json::from_str(&s).unwrap();
-//    println!("{}",serde_json::to_string_pretty(&db).unwrap());
-    
+fn main() {    
     server::new(|| App::with_state(FileRepository::new())
         .resource("/", |r| r.f(index))
-/*        .resource("/api/db.json", |r| r.f(|r| {
-            r.state.load() match {
-                Ok(&db) =>{
-
-                } r.state.load(){
-                
-                HttpResponse::Ok()
-                .content_type("application/json")
-                .body(db.to_json().unwrap())
-
-            }
-            HttpResponse::Ok()
-            .content_type("application/json")
-            .body(r.state().to_json().unwrap())
-        }))*/
         .resource("/api/db.json", |r| r.f(serve_database))
         .resource("/api/dbnow.json", |r| r.f(|_r| {
             HttpResponse::Ok()
