@@ -205,6 +205,7 @@ pub fn handle_multipart_item(
 }
 
 pub fn upload(req: HttpRequest<FileRepository>) -> FutureResponse<HttpResponse> {
+    println!("Upload json");
     Box::new(
         req.multipart()
             .map_err(error::ErrorInternalServerError)
@@ -219,6 +220,7 @@ pub fn upload(req: HttpRequest<FileRepository>) -> FutureResponse<HttpResponse> 
                     HttpResponse::Ok().body("Saved")
                 }
                 else{                    
+                    println!("Upload json - ERR");
                     HttpResponse::InternalServerError().reason("UTF8 decoding error").body("UTF8 decoding error")
                 }
             }
@@ -272,6 +274,12 @@ fn main() {
             HttpResponse::Ok()
             .content_type("text/html")
             .body(CONTENT)
+        }))
+        .resource("/app.html", |r| r.f(|_r| {
+            let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-wasm/www/app.html").expect("Read error");
+            HttpResponse::Ok()
+            .content_type("text/html")
+            .body(content)
         }))
         .resource("/textglue_wasm.js", |r| r.f(|_r| {
             const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm.js");

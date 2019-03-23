@@ -16,6 +16,7 @@
             <v-content v-if="loaded_wasm">
                 <v-toolbar>
                     <v-toolbar-title>TextGlue</v-toolbar-title>
+                    <v-btn @click="save()">Save</v-btn>
                     <v-spacer></v-spacer>
                     <v-tooltip bottom>
                         <template v-slot:activator="{ on }">
@@ -45,12 +46,13 @@
         </v-app>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
     <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
     <script src='textglue_wasm.js'></script>
     <script type="module">
         console.log("start");
         Vue.prototype.$tg = wasm_bindgen;
+        Vue.prototype.$http = axios;
         const run = async function () {
             console.log("run");
             await Vue.prototype.$tg('textglue_wasm_bg.wasm');
@@ -92,20 +94,27 @@
                         console.log("INFO:" + message);
                     },
                     load: function () {
+                        this.info("Loading");
                         this.$http.get("/api/db.json").then(
                             function (response) {
-                                response.text().then(
-                                    function (data) {
-                                        this.error(this.$tg.set_database_json(data));
-                                        this.data = this.$tg.get_database();
-                                    }.bind(this),
-                                    function (data) {
-                                        this.error("Loading error (response text)", err);
-                                    }.bind(this)
-                                )
+                                this.info("Response received");
+                                console.log(response.data);
+                                this.error(this.$tg.set_database(response.data));
+                                this.data = this.$tg.get_database();
                             }.bind(this),
                             function (err) {
                                 this.error("Loading error", err);
+                            }.bind(this)
+                        );
+                    },
+                    save: function (){
+                        this.$http.post("/api/upload-json",this.$tg.get_database()).then(
+                            function (response) {
+                                this.info("Save response received");
+                                console.log(response.data);
+                            }.bind(this),
+                            function (err) {
+                                this.error("Save error", err);
                             }.bind(this)
                         );
                     }
