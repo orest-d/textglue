@@ -11,6 +11,8 @@
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
         </template>
       </v-select>
+      <v-switch v-model="ext" label="Extended">
+      </v-switch>
       <v-spacer></v-spacer>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
@@ -21,6 +23,11 @@
     </v-toolbar>
 
     <v-content v-if="loaded_wasm">
+      <v-container v-if="ext">
+        <v-text-field v-model="snippet_name" label="Name"></v-text-field>
+        <v-textarea v-model="snippet_summary" label="Summary"></v-textarea>
+        <v-combobox v-model="snippet_tags" label="Tags" multiple chips></v-combobox>
+      </v-container>
       <v-textarea v-model="value" rows="45"></v-textarea>
     </v-content>
     <v-content v-else>
@@ -55,7 +62,8 @@ export default {
       metadata: {},
       snippet_ids: [],
       snippet_text: "",
-      selected_snippet: ""
+      selected_snippet: "",
+      ext:false
     };
   },
   methods: {
@@ -122,7 +130,41 @@ export default {
       set(value) {
         this.$tg.set_snippet(this.selected_snippet, value);
       }
+    },
+    snippet_name: {
+      get() {
+        return this.$tg.get_metadata()[this.selected_snippet].name;
+      },
+      set(value) {
+        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        metadata.name = value;
+        this.metadata[this.selected_snippet]=metadata;
+        this.$tg.set_metadata(this.selected_snippet, metadata);
+      }
+    },
+    snippet_summary: {
+      get() {
+        return this.$tg.get_metadata()[this.selected_snippet].summary;
+      },
+      set(value) {
+        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        metadata.summary = value;
+        this.metadata[this.selected_snippet]=metadata;
+        this.$tg.set_metadata(this.selected_snippet, metadata);
+      }
+    },
+    snippet_tags: {
+      get() {
+        return this.$tg.get_metadata()[this.selected_snippet].tags;
+      },
+      set(value) {
+        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        metadata.tags = value;
+        this.metadata[this.selected_snippet]=metadata;
+        this.$tg.set_metadata(this.selected_snippet, metadata);
+      }
     }
+
   },
   created() {
     this.$tg.set_snippet("abc", "lorem");

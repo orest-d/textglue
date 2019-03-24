@@ -16,6 +16,8 @@ use actix_web::{
     HttpMessage, HttpRequest, HttpResponse, Json
 };
 
+use actix_web::fs::StaticFiles;
+
 use futures::{Future, Stream};
 use std::io::Write;
 use std::fs::{self, File};
@@ -269,7 +271,7 @@ fn main() {
             .content_type("application/json")
             .body(FileRepository::new().load().unwrap().to_json().unwrap())
         }))
-        .resource("/index.html", |r| r.f(|_r| {
+        .resource("/app-static.html", |r| r.f(|_r| {
             const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/www/app.html");
             HttpResponse::Ok()
             .content_type("text/html")
@@ -300,6 +302,22 @@ fn main() {
         .resource("/api/upload-json", |r|
                 r.method(http::Method::POST).with(upload_json)
         )
+        .handler(
+            "/js",
+            StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/js")
+                .unwrap()
+                .show_files_listing())
+        .handler(
+            "/css",
+            StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/css")
+                .unwrap()
+                .show_files_listing())
+        .resource("/index.html", |r| r.f(|_r| {
+            let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-app/dist/index.html").expect("Read error");
+            HttpResponse::Ok()
+            .content_type("text/html")
+            .body(content)
+        }))
 
     )
     .bind("127.0.0.1:8088")
