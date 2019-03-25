@@ -1,9 +1,25 @@
 <template>
   <v-app dark>
-    <v-toolbar>
-      <v-toolbar-title>TextGlue</v-toolbar-title>
-      <v-btn @click="save()">Save</v-btn>
-      <v-select v-model="selected_snippet" :items="snippet_ids" solo>
+    <v-toolbar dense>
+      <img src="logo.png" ></img>
+      <v-menu offset-y>
+        <template v-slot:activator="{ on }">
+          <v-toolbar-title v-on="on">
+            <span>TextGlue</span>
+            <v-icon>arrow_drop_down</v-icon>
+          </v-toolbar-title>
+        </template>
+        <v-list>
+          <v-list-tile @click="mode='snippets'">
+            <v-list-tile-title>Snippets</v-list-tile-title>
+          </v-list-tile>
+          <v-list-tile @click="mode='documents'">
+            <v-list-tile-title>Documents</v-list-tile-title>
+          </v-list-tile>
+        </v-list>
+      </v-menu>
+
+      <v-select v-model="selected_snippet" :items="snippet_ids" solo v-if="mode=='snippets'">
         <template slot="selection" slot-scope="data">
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
         </template>
@@ -11,9 +27,16 @@
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
         </template>
       </v-select>
-      <v-switch v-model="ext" label="Extended">
-      </v-switch>
+
+      <v-select v-model="selected_document" :items="document_names" solo v-if="mode=='documents'">
+      </v-select>
+
+      <v-btn @click="new_snippet()" v-if="mode=='snippets'"><v-icon>add</v-icon></v-btn>
+      <v-btn @click="new_document()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
+
+      <v-btn @click="save()"><v-icon>save_alt</v-icon></v-btn>
       <v-spacer></v-spacer>
+      <v-switch v-model="ext" label="Extended"></v-switch>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-chip :color="status_color" v-on="  on">{{status}}</v-chip>
@@ -54,6 +77,7 @@ export default {
   data() {
     return {
       //
+      mode:"snippets",
       loaded_wasm: true,
       data: { snippets: {} },
       status: "OK",
@@ -86,7 +110,7 @@ export default {
     },
     info(message) {
       this.status = "OK";
-      this.status_color = "green";
+      this.status_color = "";
       this.message = message;
       console.log("INFO:" + message);
     },
@@ -163,8 +187,12 @@ export default {
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
       }
+    },
+    document_names: {
+      get() {
+        return Object.keys(this.data.documents);
+      }
     }
-
   },
   created() {
     this.$tg.set_snippet("abc", "lorem");

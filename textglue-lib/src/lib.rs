@@ -98,6 +98,26 @@ impl Database{
         }
     }
 
+    pub fn new_snippet(&mut self, id:&str) -> String{
+      self.tidy();
+      if self.snippets.contains_key(id){
+          for i in 1..{
+              let new_id = format!("{}_{}",id,i);
+              if !self.snippets.contains_key(id){
+                self.snippets.insert(new_id.to_string(), "".to_string());
+                self.fill();
+                return new_id;
+              }
+          }
+          panic!("This should not happen...")
+      }
+      else{
+          self.snippets.insert(id.to_string(), "".to_string());
+          self.fill();
+          id.to_string()
+      }
+    } 
+
     pub fn keys_chain(&self) -> impl Iterator<Item = &String>{
         self.snippets.keys().chain(self.metadata.keys())
     }
@@ -138,6 +158,19 @@ impl Database{
     pub fn new_document<'a>(&'a mut self, id:&str, name:&str) -> &'a mut Document{
         self.documents.insert(id.to_string(), Document::new(name));
         self.documents.get_mut(id).unwrap()
+    }
+    pub fn new_document_autoid<'a>(&'a mut self, name:&str) -> String{
+        let id = name.to_string()
+                .replace(" ","_")
+                .replace(",","_")
+                .replace(".","")
+                .replace("+","_")
+                .replace("&","_")
+                .replace("?","")
+                .replace("!","")
+                .to_lowercase();
+        self.new_document(&id, name);
+        id
     }
 
     pub fn document<'a>(&'a mut self) -> &'a mut Document{

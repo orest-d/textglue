@@ -318,6 +318,12 @@ fn main() {
             .content_type("text/html")
             .body(content)
         }))
+        .resource("/logo.png", |r| r.f(|_r| {
+            const CONTENT: &'static [u8] = include_bytes!("../../textglue-app/public/logo.png");
+            HttpResponse::Ok()
+            .content_type("image/png")
+            .body(CONTENT)
+        }))
 
     )
     .bind("127.0.0.1:8088")

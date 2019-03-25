@@ -126,3 +126,15 @@ pub fn get_documents() -> JsValue {
     let db:&Database = &*DB.lock().unwrap();
     JsValue::from_serde(&db.documents).unwrap()
 }
+
+#[wasm_bindgen]
+pub fn new_document_autoid(name:&str) -> JsValue {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    JsValue::from_serde(&db.new_document_autoid(name)).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn new_snippet(id:&str) -> JsValue {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    JsValue::from_serde(&db.new_snippet(id)).unwrap()
+}
