@@ -30,9 +30,16 @@
 
       <v-select v-model="selected_document" :items="document_names" solo v-if="mode=='documents'">
       </v-select>
-
+      <v-select v-model="selected_chapter" :items="chapters_id" item-value="id" solo v-if="mode=='documents'">
+        <template slot="selection" slot-scope="data">
+          <b>{{data.item.name}}</b> 
+        </template>
+        <template slot="item" slot-scope="data">
+          <b>{{data.item.name}}</b> 
+        </template>
+      </v-select>
       <v-btn @click="new_snippet()" v-if="mode=='snippets'"><v-icon>add</v-icon></v-btn>
-      <v-btn @click="new_document()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
+      <v-btn @click="new_chapter()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
 
       <v-btn @click="save()"><v-icon>save_alt</v-icon></v-btn>
       <v-spacer></v-spacer>
@@ -46,12 +53,13 @@
     </v-toolbar>
 
     <v-content v-if="loaded_wasm">
+
       <v-container v-if="ext">
         <v-text-field v-model="snippet_name" label="Name"></v-text-field>
         <v-textarea v-model="snippet_summary" label="Summary"></v-textarea>
         <v-combobox v-model="snippet_tags" label="Tags" multiple chips></v-combobox>
       </v-container>
-      <v-textarea v-model="value" rows="45"></v-textarea>
+      <v-textarea v-model="snippet_text" rows="45"></v-textarea>
     </v-content>
     <v-content v-else>
       <v-container bg fill-height grid-list-md text-xs-center>
@@ -85,8 +93,12 @@ export default {
       message: "",
       metadata: {},
       snippet_ids: [],
-      snippet_text: "",
+      document_names:[],
+      chapters:[],
+      chapters_id:[],
       selected_snippet: "",
+      selected_document: "document",
+      selected_chapter: 0,
       ext:false
     };
   },
@@ -121,14 +133,26 @@ export default {
           this.info("Response received");
           console.log(response.data);
           this.error(this.$tg.set_database(response.data));
-          this.data = this.$tg.get_database();
-          this.metadata = this.$tg.get_metadata();
-          this.snippet_ids = Object.keys(this.metadata);
+          this.update();
         }.bind(this),
         function(err) {
           this.error("Loading error", err);
         }.bind(this)
       );
+    },
+    update(){
+      //this.data = this.$tg.get_database();
+      this.metadata = this.$tg.get_metadata();
+      this.documents= this.$tg.get_documents();
+      this.snippet_ids = Object.keys(this.metadata);
+      this.snippet_ids.sort();
+      this.snippet_ids.reverse();
+      this.document_names = Object.keys(this.documents);
+      this.chapters = this.$tg.get_document(this.selected_document).chapters;
+      this.chapters_id =[];
+      for (var i = 0; i<this.chapters.length; i++){
+        this.chapters_id.push({...this.chapters[i],id:i});
+      }
     },
     save() {
       this.$http.post("/api/upload-json", this.$tg.get_database()).then(
@@ -144,10 +168,22 @@ export default {
     snippet_item(snippet_id) {
       console.log("snippet item", snippet_id);
       return snippet_id + ": " + this.metadata[snippet_id].name;
+    },
+    new_snippet(){
+      let id = (new Date()).toISOString().slice(0,10);
+      this.selected_snippet=this.$tg.new_snippet(id);
+      this.update();
+      this.info("New snippet: "+id);
+    },
+    new_chapter(){
+      var ch = this.$tg.add_chapter_autoname(this.selected_document);
+      this.update();
+      this.selected_chapter=this.$tg.get_document(this.selected_document).chapters.length-1;
+      this.info("New chapter "+ch.name);
     }
   },
   computed: {
-    value: {
+    snippet_text: {
       get() {
         return this.$tg.get_snippet(this.selected_snippet);
       },
@@ -186,11 +222,6 @@ export default {
         metadata.tags = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
-      }
-    },
-    document_names: {
-      get() {
-        return Object.keys(this.data.documents);
       }
     }
   },

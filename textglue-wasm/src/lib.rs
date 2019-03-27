@@ -134,7 +134,19 @@ pub fn new_document_autoid(name:&str) -> JsValue {
 }
 
 #[wasm_bindgen]
-pub fn new_snippet(id:&str) -> JsValue {
+pub fn get_document(name:&str) -> JsValue {
     let db:&mut Database = &mut *DB.lock().unwrap();
-    JsValue::from_serde(&db.new_snippet(id)).unwrap()
+    JsValue::from_serde(&db.get_document(name)).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn new_snippet(id:&str) -> String {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    db.new_snippet(id)
+}
+
+#[wasm_bindgen]
+pub fn add_chapter_autoname(document:&str) -> JsValue {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    JsValue::from_serde(&db.get_document(document).add_chapter_autoname()).unwrap()
 }

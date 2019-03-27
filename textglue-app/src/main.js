@@ -24,7 +24,7 @@ const run = async function () {
       data: {},
       status: "OK",
       status_color: "",
-      message: ""
+      message: ""      
     },
     methods: {
       error: function (message, reason) {
@@ -77,10 +77,6 @@ const run = async function () {
           }.bind(this)
         );
       }
-    },
-    created: function () {
-      this.$tg.set_snippet("abc", "lorem");
-      this.load();
     }
   }).$mount('#app');
 };

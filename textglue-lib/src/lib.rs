@@ -63,6 +63,14 @@ impl Document{
         let index = self.chapters.len()-1;
         &mut self.chapters[index]
     }
+
+    pub fn add_chapter_autoname(&mut self) -> &mut Chapter{
+        self.add_chapter(&format!("Chapter {}",self.chapters.len()+1))
+    }
+
+    pub fn len(&self) -> usize{
+        self.chapters.len()
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -98,24 +106,60 @@ impl Database{
         }
     }
 
+    pub fn new_document_id(&self,name:&str) -> String{
+        let id = name.to_string()
+                    .replace(" ","_")
+                    .replace(",","_")
+                    .replace(".","")
+                    .replace("+","_")
+                    .replace("&","_")
+                    .replace("?","")
+                    .replace("!","")
+                    .to_lowercase();
+        if self.documents.contains_key(&id){
+            for i in 1..{
+                let new_id = format!("{}_{}",id,i);
+                if !self.documents.contains_key(&new_id){
+                    return new_id;
+                }
+            }
+            panic!("This should not happen!");
+        }
+        else{
+            id
+        }
+    }
+
+    pub fn new_snippet_id(&mut self,name:&str)->String{
+        let id = name.to_string()
+                    .replace(" ","_")
+                    .replace(",","_")
+                    .replace(".","")
+                    .replace("+","_")
+                    .replace("&","_")
+                    .replace("?","")
+                    .replace("!","")
+                    .to_lowercase();
+        self.tidy();
+        if self.snippets.contains_key(&id){
+            for i in 1..{
+                let new_id = format!("{}_{}",id,i);
+                if !self.snippets.contains_key(&new_id){
+                    return new_id;
+                }
+            }
+            panic!("This should not happen!");
+        }
+        else{
+            id
+        }
+    }
+
     pub fn new_snippet(&mut self, id:&str) -> String{
-      self.tidy();
-      if self.snippets.contains_key(id){
-          for i in 1..{
-              let new_id = format!("{}_{}",id,i);
-              if !self.snippets.contains_key(id){
-                self.snippets.insert(new_id.to_string(), "".to_string());
-                self.fill();
-                return new_id;
-              }
-          }
-          panic!("This should not happen...")
-      }
-      else{
-          self.snippets.insert(id.to_string(), "".to_string());
-          self.fill();
-          id.to_string()
-      }
+        let id = self.new_snippet_id(id);
+        self.snippets.insert(id.clone(), "".to_string());
+        self.fill();
+        id
     } 
 
     pub fn keys_chain(&self) -> impl Iterator<Item = &String>{
@@ -131,6 +175,7 @@ impl Database{
     }
 
     pub fn fill(&mut self)->&mut Database{
+        self.document();
         let keys = self.keys().collect::<Vec<String>>();
         for key in keys.iter(){
             if !self.snippets.contains_key(key){
@@ -160,15 +205,7 @@ impl Database{
         self.documents.get_mut(id).unwrap()
     }
     pub fn new_document_autoid<'a>(&'a mut self, name:&str) -> String{
-        let id = name.to_string()
-                .replace(" ","_")
-                .replace(",","_")
-                .replace(".","")
-                .replace("+","_")
-                .replace("&","_")
-                .replace("?","")
-                .replace("!","")
-                .to_lowercase();
+        let id = self.new_document_id(name);
         self.new_document(&id, name);
         id
     }
@@ -181,6 +218,16 @@ impl Database{
             self.new_document("document", "Document")
         }
     }
+
+    pub fn get_document<'a>(&'a mut self,id:&str) -> &'a mut Document{
+        if self.documents.contains_key(id){
+            self.documents.get_mut(id).unwrap()
+        }
+        else{
+            self.new_document(id,id)
+        }
+    }
+
     pub fn to_pretty_json(&self) -> serde_json::Result<String>{
         serde_json::to_string_pretty(self)
     }
