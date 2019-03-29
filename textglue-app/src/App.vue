@@ -202,6 +202,18 @@ export default {
         this.$tg.set_metadata(this.selected_snippet, metadata);
       }
     },
+    chapter_snippets:{
+      get(){
+        this.chapters[this.selected_chapter].snippets;
+      },
+      set(value){
+        this.result(this.$tg.set_chapter(this.selected_document,this.selected_chapter,value));
+        if (this.status=="OK"){
+          this.chapters[this.selected_chapter].snippets=value;
+        }
+      },
+
+    },
     snippet_summary: {
       get() {
         return this.$tg.get_metadata()[this.selected_snippet].summary;

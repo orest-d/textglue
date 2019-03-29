@@ -148,5 +148,26 @@ pub fn new_snippet(id:&str) -> String {
 #[wasm_bindgen]
 pub fn add_chapter_autoname(document:&str) -> JsValue {
     let db:&mut Database = &mut *DB.lock().unwrap();
-    JsValue::from_serde(&db.get_document(document).add_chapter_autoname()).unwrap()
+    JsValue::from_serde(&db.get_document_mut(document).add_chapter_autoname()).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn get_chapter(document:&str,i:usize) -> JsValue {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    JsValue::from_serde(&db.get_document(document).chapters[i]).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn set_chapter(document:&str,i:usize,chapter:JsValue) -> String {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    match chapter.into_serde::<Chapter>(){
+       Ok(ch) => {db.get_document_mut(document).chapters[i]=ch; "OK".to_string()},
+       Err(e) => format!("Error in set_chapter: {}",e)
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_chapter_text(document:&str,i:usize, id_prefix:&str, id_postfix:&str) -> String {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    db.tidy().get_chapter_text(document,i,id_prefix,id_postfix)
 }
