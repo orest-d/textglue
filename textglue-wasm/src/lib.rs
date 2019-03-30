@@ -7,6 +7,8 @@ extern crate lazy_static;
 extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
+extern crate web_sys;
+
 
 #[macro_use]
 extern crate serde_derive;
@@ -153,8 +155,15 @@ pub fn add_chapter_autoname(document:&str) -> JsValue {
 
 #[wasm_bindgen]
 pub fn get_chapter(document:&str,i:usize) -> JsValue {
+    web_sys::console::log_1(&JsValue::from_str(&format!("get_chapter A {} {}",document,i)));
     let db:&mut Database = &mut *DB.lock().unwrap();
-    JsValue::from_serde(&db.get_document(document).chapters[i]).unwrap()
+
+    if let Some(chapter)=db.get_document_mut(document).chapters.get(i){
+        JsValue::from_serde(chapter).unwrap()
+    }
+    else{
+        JsValue::null()
+    }
 }
 
 #[wasm_bindgen]

@@ -292,14 +292,18 @@ impl Database{
 
     pub fn get_chapter_text(&self, document_id:&str, chapter_number:usize, id_prefix:&str, id_postfix:&str) -> String {
         if let Some(doc) = self.documents.get(document_id){
-            let ch = &doc.chapters[chapter_number];
-            let snippets = &self.snippets;
-            ch.snippets.iter().map(
-                |id| format!("{}{}{}\n{}",id_prefix,id,id_postfix,snippets.get(id).unwrap())
-            ).collect::<Vec<String>>().join(", ")
+            if let Some(ch) = &doc.chapters.get(chapter_number){
+                let snippets = &self.snippets;
+                ch.snippets.iter().map(
+                    |id| format!("{}{}{}\n{}",id_prefix,id,id_postfix,snippets.get(id).unwrap_or(&"".to_string()))
+                ).collect::<Vec<String>>().join(", ")
+            }
+            else{
+                "Error 1".to_string()
+            }
         }
         else{
-            "".to_string()
+            "Error 2".to_string()
         }
     }
 

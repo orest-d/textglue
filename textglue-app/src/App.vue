@@ -1,6 +1,6 @@
 <template>
   <v-app dark>
-    <v-toolbar dense>
+    <v-toolbar dense app>
       <img src="logo.png" ></img>
       <v-menu offset-y>
         <template v-slot:activator="{ on }">
@@ -18,7 +18,6 @@
           </v-list-tile>
         </v-list>
       </v-menu>
-
       <v-select v-model="selected_snippet" :items="snippet_ids" solo v-if="mode=='snippets'">
         <template slot="selection" slot-scope="data">
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
@@ -40,6 +39,7 @@
       </v-select>
       <v-btn @click="new_snippet()" v-if="mode=='snippets'"><v-icon>add</v-icon></v-btn>
       <v-btn @click="new_chapter()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
+      <v-btn @click="update()"><v-icon>update</v-icon></v-btn>
 
       <v-btn @click="save()"><v-icon>save_alt</v-icon></v-btn>
       <v-spacer></v-spacer>
@@ -51,8 +51,11 @@
         <span>{{message}}</span>
       </v-tooltip>
     </v-toolbar>
-
-    <v-content v-if="loaded_wasm">
+<!--
+      <SnippetSelector v-model='test' :snippet_ids="snippet_ids"></SnippetSelector>
+      <h1>{{test}}</h1>
+-->
+    <v-content v-if="mode=='snippets'">
 
       <v-container v-if="ext">
         <v-text-field v-model="snippet_name" label="Name"></v-text-field>
@@ -61,26 +64,23 @@
       </v-container>
       <v-textarea v-model="snippet_text" rows="45"></v-textarea>
     </v-content>
-    <v-content v-else>
-      <v-container bg fill-height grid-list-md text-xs-center>
-        <v-layout row wrap align-center>
-          <v-card style="width:80%;height:80%;">
-            <h1>Loading</h1>
-          </v-card>
-        </v-layout>
-      </v-container>
-      <HelloWorld/>
+      <v-navigation-drawer v-if="mode=='documents'" app width="320">
+      <ChapterEditor :document="selected_document" :chapter_number="selected_chapter"></ChapterEditor>
+      </v-navigation-drawer>
+    <v-content v-if="mode=='documents'">
+      <v-textarea v-model="chapter_text" rows="45" label="Chapter text"></v-textarea>
     </v-content>
   </v-app>
 </template>
 
 <script>
-import HelloWorld from "./components/HelloWorld";
+import SnippetSelector from "./components/SnippetSelector";
+import ChapterEditor from "./components/ChapterEditor";
 
 export default {
   name: "App",
   components: {
-    HelloWorld
+    SnippetSelector, ChapterEditor
   },
   data() {
     return {
@@ -99,6 +99,8 @@ export default {
       selected_snippet: "",
       selected_document: "document",
       selected_chapter: 0,
+      chapter_text:"Chapter text - initial",
+      test:null,
       ext:false
     };
   },
@@ -153,6 +155,9 @@ export default {
       for (var i = 0; i<this.chapters.length; i++){
         this.chapters_id.push({...this.chapters[i],id:i});
       }
+      this.selected_chapter_structure=this.$tg.get_chapter(this.selected_document,this.selected_chapter);
+      this.$forceUpdate();
+      this.chapter_text = this.$tg.get_chapter_text(this.selected_document,this.selected_chapter,"--==## "," ##==--");
     },
     save() {
       this.$http.post("/api/upload-json", this.$tg.get_database()).then(
@@ -177,8 +182,8 @@ export default {
     },
     new_chapter(){
       var ch = this.$tg.add_chapter_autoname(this.selected_document);
-      this.update();
       this.selected_chapter=this.$tg.get_document(this.selected_document).chapters.length-1;
+      this.update();
       this.info("New chapter "+ch.name);
     }
   },
@@ -238,7 +243,6 @@ export default {
     }
   },
   created() {
-    this.$tg.set_snippet("abc", "lorem");
     this.load();
   }
 };
