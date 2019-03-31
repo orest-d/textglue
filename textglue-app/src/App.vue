@@ -2,6 +2,10 @@
   <v-app dark>
     <v-toolbar dense app>
       <img src="logo.png" ></img>
+      <v-btn @click="ext=!ext"><v-icon>menu</v-icon></v-btn>
+      <v-btn @click="mode='snippets'" :color="mode=='snippets'?'primary':''">Snippets</v-btn>
+      <v-btn @click="mode='documents'" :color="mode=='documents'?'primary':''">Chapter</v-btn>
+      <!--
       <v-menu offset-y>
         <template v-slot:activator="{ on }">
           <v-toolbar-title v-on="on">
@@ -18,6 +22,7 @@
           </v-list-tile>
         </v-list>
       </v-menu>
+      -->
       <v-select v-model="selected_snippet" :items="snippet_ids" solo v-if="mode=='snippets'">
         <template slot="selection" slot-scope="data">
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
@@ -40,11 +45,9 @@
       <v-btn @click="new_snippet()" v-if="mode=='snippets'"><v-icon>add</v-icon></v-btn>
       <v-btn @click="new_chapter()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
       <v-btn @click="update()"><v-icon>update</v-icon></v-btn>
-      <v-btn @click="text_to_chapter()">Text to chapter</v-btn>
 
       <v-btn @click="save()"><v-icon>save_alt</v-icon></v-btn>
       <v-spacer></v-spacer>
-      <v-switch v-model="ext" label="Extended"></v-switch>
       <v-tooltip bottom>
         <template v-slot:activator="{ on }">
           <v-chip :color="status_color" v-on="  on">{{status}}</v-chip>
@@ -56,16 +59,20 @@
       <SnippetSelector v-model='test' :snippet_ids="snippet_ids"></SnippetSelector>
       <h1>{{test}}</h1>
 -->
-    <v-content v-if="mode=='snippets'">
-
+    <v-navigation-drawer v-if="mode=='snippets'" v-model="ext" app width="500">
       <v-container v-if="ext">
         <v-text-field v-model="snippet_name" label="Name"></v-text-field>
         <v-textarea v-model="snippet_summary" label="Summary"></v-textarea>
         <v-combobox v-model="snippet_tags" label="Tags" multiple chips></v-combobox>
       </v-container>
+    </v-navigation-drawer>
+    <v-content v-if="mode=='snippets'">
       <v-textarea v-model="snippet_text" rows="45"></v-textarea>
     </v-content>
-      <v-navigation-drawer v-if="mode=='documents'" app width="320">
+      <v-navigation-drawer v-if="mode=='documents'" v-model="ext" app width="500">
+      <v-btn @click="text_to_chapter()">Text to Chapter</v-btn>
+      <v-btn @click="update()">Chapter to Text</v-btn>
+  
       <ChapterEditor :document="selected_document" :chapter_number="selected_chapter"></ChapterEditor>
       </v-navigation-drawer>
     <v-content v-if="mode=='documents'">
