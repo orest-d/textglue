@@ -180,3 +180,9 @@ pub fn get_chapter_text(document:&str,i:usize, id_prefix:&str, id_postfix:&str) 
     let db:&mut Database = &mut *DB.lock().unwrap();
     db.tidy().get_chapter_text(document,i,id_prefix,id_postfix)
 }
+
+#[wasm_bindgen]
+pub fn set_chapter_text(document:&str,i:usize, id_prefix:&str, id_postfix:&str, text:&str) {
+    let db:&mut Database = &mut *DB.lock().unwrap();
+    db.tidy().set_chapter_text(document,i,id_prefix,id_postfix,text);
+}

@@ -40,6 +40,7 @@
       <v-btn @click="new_snippet()" v-if="mode=='snippets'"><v-icon>add</v-icon></v-btn>
       <v-btn @click="new_chapter()" v-if="mode=='documents'"><v-icon>add_box</v-icon></v-btn>
       <v-btn @click="update()"><v-icon>update</v-icon></v-btn>
+      <v-btn @click="text_to_chapter()">Text to chapter</v-btn>
 
       <v-btn @click="save()"><v-icon>save_alt</v-icon></v-btn>
       <v-spacer></v-spacer>
@@ -101,7 +102,9 @@ export default {
       selected_chapter: 0,
       chapter_text:"Chapter text - initial",
       test:null,
-      ext:false
+      ext:false,
+      id_prefix:"-----=====##### ",
+      id_postfix:" #####=====-----\n",
     };
   },
   methods: {
@@ -143,7 +146,10 @@ export default {
       }
       this.selected_chapter_structure=this.$tg.get_chapter(this.selected_document,this.selected_chapter);
       this.$forceUpdate();
-      this.chapter_text = this.$tg.get_chapter_text(this.selected_document,this.selected_chapter,"--==## "," ##==--");
+      this.chapter_text = this.$tg.get_chapter_text(this.selected_document,this.selected_chapter,this.id_prefix,this.id_postfix);
+    },
+    text_to_chapter(){
+      this.$tg.set_chapter_text(this.selected_document,this.selected_chapter,this.id_prefix,this.id_postfix, this.chapter_text);
     },
     load(){
       if ("textglue_db" in localStorage){

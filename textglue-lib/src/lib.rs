@@ -9,6 +9,34 @@ use std::collections::{HashMap,HashSet};
 
 use std::str::FromStr;
 
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+#[derive(Debug)]
+struct GenericError {
+    details: String
+}
+
+impl GenericError {
+    fn new(msg: &str) -> GenericError {
+        GenericError{details: msg.to_string()}
+    }
+}
+
+fn generic_error(msg: &str) -> GenericError{
+    GenericError::new(msg)
+}
+
+impl std::fmt::Display for GenericError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(f,"{}",self.details)
+    }
+}
+
+impl std::error::Error for GenericError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Chapter{
@@ -89,6 +117,36 @@ impl Metadata{
         }
     }
 }
+/*
+enum ChapterTextSnippet<'a>{
+    Snippet{id:&'a str,text:&'a str,remainder:Option<&'a str>},
+    End,
+    Remainder(&'a str),
+    EndMissing(&'a str)
+}
+
+fn next_snippet<'a>(text:&'a str, id_prefix:&str, id_postfix:&str) -> ChapterTextSnippet<'a>{
+    if let Some(start) = text.find(id_prefix){
+        let id_start = start + id_prefix.len();
+        if let Some(end) = text[id_start..].find(id_postfix){
+            let id:&str = text[id_start..][..end]
+            let text = text[id_start..][()]
+            ChapterTextSnippet::End
+        }
+        else{
+            ChapterTextSnippet::EndMissing(&text[id_start..])
+        }
+    }
+    else{
+        if text.len() == 0{
+            ChapterTextSnippet::End
+        }
+        else{
+            ChapterTextSnippet::Remainder(text)
+        }
+    }
+}
+*/
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database{
@@ -305,6 +363,27 @@ impl Database{
         else{
             "Error 2".to_string()
         }
+    }
+
+    pub fn set_chapter_text(&mut self, document_id:&str, chapter_number:usize, id_prefix:&str, id_postfix:&str, text:&str) -> Result<()> {
+        let mut snippet_ids:Vec<String> = Vec::new();
+        {
+            let doc:&mut Document = self.get_document_mut(document_id);
+            if doc.chapters.len() <= chapter_number{
+                return Err(Box::new(generic_error(&format!("Chapter {} not in '{}' containing {} chapters.",chapter_number,document_id,doc.chapters.len()))));
+            }
+            for fragment in text.split_terminator(id_prefix).skip(1){
+                let v = fragment.split_terminator(id_postfix).collect::<Vec<&str>>();
+                if v.len() >= 2{
+                    snippet_ids.push(v[0].to_string());
+                    self.snippets.insert(v[0].to_string(), v[1..].join("\n").to_string());
+                }
+            }
+        }
+        let doc:&mut Document = self.tidy().get_document_mut(document_id);
+        let chapter:&mut Chapter = &mut doc.chapters[chapter_number];
+        chapter.snippets = snippet_ids;
+        Ok(())
     }
 
 }
