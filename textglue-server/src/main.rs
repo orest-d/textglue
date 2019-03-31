@@ -23,35 +23,6 @@ use std::io::Write;
 use std::fs::{self, File};
 use std::path::{Path};
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
-
-#[derive(Debug)]
-struct GenericError {
-    details: String
-}
-
-impl GenericError {
-    fn new(msg: &str) -> GenericError {
-        GenericError{details: msg.to_string()}
-    }
-}
-
-fn generic_error(msg: &str) -> GenericError{
-    GenericError::new(msg)
-}
-
-impl std::fmt::Display for GenericError {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f,"{}",self.details)
-    }
-}
-
-impl std::error::Error for GenericError {
-    fn description(&self) -> &str {
-        &self.details
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct FileRepository{
     snippet_file_postfix:String,
@@ -67,12 +38,12 @@ impl FileRepository{
             snippet_file_postfix:".txt".to_string(),
             metadata_file_postfix:".meta.yaml".to_string(),
             document_file_postfix:".doc.yaml".to_string(),
-            directory:"md2".to_string(),
+            directory:"md3".to_string(),
             path:"textglue.json".to_string(),
         }
     }
 
-    pub fn load(&self) -> Result<Database>{
+    pub fn load(&self) -> textglue_lib::Result<Database>{
         let all_files = files(&self.directory);
         let mut db = Database::new();
         assert!(!self.metadata_file_postfix.ends_with(&self.snippet_file_postfix));
@@ -100,21 +71,21 @@ impl FileRepository{
         Ok(db)
     }
 
-    pub fn load_json(&self) -> Result<String>{
+    pub fn load_json(&self) -> textglue_lib::Result<String>{
         Ok(serde_json::to_string(&self.load()?)?)
     }
 
-    pub fn save(&self,db:&Database) -> Result<()>{
+    pub fn save(&self,db:&Database) -> textglue_lib::Result<()>{
         self.save_to_directory(db, &self.directory)
     }
 
-    pub fn save_json(&self,json:&str) -> Result<()>{
+    pub fn save_json(&self,json:&str) -> textglue_lib::Result<()>{
         let db:Database = serde_json::from_str(json)?;
         self.save(&db)?;
         Ok(())
     }
 
-    pub fn save_to_directory(&self,db:&Database,directory:&str) -> Result<()>{
+    pub fn save_to_directory(&self,db:&Database,directory:&str) -> textglue_lib::Result<()>{
         let dirpath = Path::new(directory);
         fs::create_dir_all(dirpath)?;
         for (key,value) in db.snippets.iter(){
@@ -135,7 +106,7 @@ impl FileRepository{
         Ok(())
     }
 
-    pub fn remove_unused(&self,db:&Database) -> Result<()>{
+    pub fn remove_unused(&self,db:&Database) -> textglue_lib::Result<()>{
         let all_files = files(&self.directory);
         let keys:Vec<String> = db.keys().collect();
         for path in all_files{

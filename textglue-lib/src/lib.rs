@@ -9,20 +9,20 @@ use std::collections::{HashMap,HashSet};
 
 use std::str::FromStr;
 
-type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[derive(Debug)]
-struct GenericError {
-    details: String
+pub struct GenericError {
+    pub details: String
 }
 
 impl GenericError {
-    fn new(msg: &str) -> GenericError {
+    pub fn new(msg: &str) -> GenericError {
         GenericError{details: msg.to_string()}
     }
 }
 
-fn generic_error(msg: &str) -> GenericError{
+pub fn generic_error(msg: &str) -> GenericError{
     GenericError::new(msg)
 }
 
