@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <div id="app">
+        <v-app dark>
+            <v-content v-if="loaded_wasm">
+                <v-toolbar>
+                    <v-toolbar-title>TextGlue</v-toolbar-title>
+                    <v-btn @click="save()">Save</v-btn>
+                    <v-spacer></v-spacer>
+                    <v-tooltip bottom>
+                        <template v-slot:activator="{ on }">
+                            <v-chip :color="status_color" v-on="  on">{{status}}</v-chip>
+                        </template>
+                        <span>{{message}}</span>
+                    </v-tooltip>
+                </v-toolbar>
+                <v-container>
+                    <ul>
+                        <li v-for="(value,key) in data.snippets">
+                            <h4>{{key}}</h4>
+                            <v-textarea v-model="value"></v-textarea>
+                        </li>
+                    </ul>
+                </v-container>
+            </v-content>
+            <v-content v-else>
+                <v-container bg fill-height grid-list-md text-xs-center>
+                    <v-layout row wrap align-center>
+                        <v-card style="width:80%;height:80%;">
+                            <h1>Loading</h1>
+                        </v-card>
+                    </v-layout>
+                </v-container>
+            </v-content>
+        </v-app>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src='textglue_wasm.js'></script>
+    <script type="module">
+        console.log("start");
+        Vue.prototype.$tg = wasm_bindgen;
+        Vue.prototype.$http = axios;
+        const run = async function () {
+            console.log("run");
+            await Vue.prototype.$tg('textglue_wasm_bg.wasm');
+            console.log("loaded");
+            new Vue({
+                el: '#app',
+                data: {
+                    tg: null,
+                    loaded_wasm: true,
+                    data: {},
+                    status: "OK",
+                    status_color: "",
+                    message: ""
+                },
+                methods: {
+                    error: function (message, reason) {
+                        if (message == "OK") {
+                            this.info(message);
+                        }
+                        else {
+                            this.status = "ERROR";
+                            this.status_color = "red";
+                            this.message = message;
+                            console.log("ERROR:" + message, reason);
+                        }
+                    },
+                    result: function (message) {
+                        if (message == "OK") {
+                            this.info(message);
+                        }
+                        else {
+                            this.error(message, "")
+                        }
+                    },
+                    info: function (message) {
+                        this.status = "OK";
+                        this.status_color = "green";
+                        this.message = message;
+                        console.log("INFO:" + message);
+                    },
+                    load: function () {
+                        this.info("Loading");
+                        this.$http.get("/api/db.json").then(
+                            function (response) {
+                                this.info("Response received");
+                                console.log(response.data);
+                                this.error(this.$tg.set_database(response.data));
+                                this.data = this.$tg.get_database();
+                            }.bind(this),
+                            function (err) {
+                                this.error("Loading error", err);
+                            }.bind(this)
+                        );
+                    },
+                    save: function (){
+                        this.$http.post("/api/upload-json",this.$tg.get_database()).then(
+                            function (response) {
+                                this.info("Save response received");
+                                console.log(response.data);
+                            }.bind(this),
+                            function (err) {
+                                this.error("Save error", err);
+                            }.bind(this)
+                        );
+                    }
+                },
+                created: function () {
+                    this.$tg.set_snippet("abc", "lorem");
+                    this.load();
+                }
+            });
+        };
+        run();
+    </script>
+</body>
+
+</html>
