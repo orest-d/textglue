@@ -128,20 +128,6 @@ export default {
       this.message = message;
       console.log("INFO:" + message);
     },
-    load() {
-      this.info("Loading");
-      this.$http.get("/api/db.json").then(
-        function(response) {
-          this.info("Response received");
-          console.log(response.data);
-          this.error(this.$tg.set_database(response.data));
-          this.update();
-        }.bind(this),
-        function(err) {
-          this.error("Loading error", err);
-        }.bind(this)
-      );
-    },
     update(){
       //this.data = this.$tg.get_database();
       this.metadata = this.$tg.get_metadata();
@@ -159,8 +145,39 @@ export default {
       this.$forceUpdate();
       this.chapter_text = this.$tg.get_chapter_text(this.selected_document,this.selected_chapter,"--==## "," ##==--");
     },
+    load(){
+      if ("textglue_db" in localStorage){
+        this.error(this.$tg.set_database_json(localStorage.textglue_db));
+        if (this.status!="OK"){
+          this.load_from_server();
+        }
+        else{
+          this.update();
+        }
+      }
+      else{
+        this.load_from_server();
+      }
+    },
+    load_from_server() {
+      this.info("Loading");
+      this.$http.get("/api/db.json").then(
+        function(response) {
+          this.info("Response received");
+          console.log(response.data);
+          this.error(this.$tg.set_database(response.data));
+          this.update();
+        }.bind(this),
+        function(err) {
+          this.error("Loading error", err);
+        }.bind(this)
+      );
+    },
     save() {
-      this.$http.post("/api/upload-json", this.$tg.get_database()).then(
+      let db = this.$tg.get_database();
+      let db_json = this.$tg.get_database_json();
+      localStorage.setItem("textglue_db",db_json);
+      this.$http.post("/api/upload-json", db).then(
         function(response) {
           this.info("Save response received");
           console.log(response.data);
