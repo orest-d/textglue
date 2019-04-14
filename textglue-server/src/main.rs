@@ -9,7 +9,10 @@ extern crate actix;
 extern crate actix_web;
 extern crate futures;
 extern crate textglue_lib;
+extern crate clap;
 
+
+use clap::{Arg, SubCommand};
 use textglue_lib::*;
 use actix_web::{
     dev, error, http, multipart, server, App, Error, FutureResponse,
@@ -233,71 +236,87 @@ fn serve_database(request:&HttpRequest<FileRepository>) -> HttpResponse{
     }
 }
 
-fn main() {    
-    server::new(|| App::with_state(FileRepository::new())
-        .resource("/", |r| r.f(index))
-        .resource("/api/db.json", |r| r.f(serve_database))
-        .resource("/api/dbnow.json", |r| r.f(|_r| {
-            HttpResponse::Ok()
-            .content_type("application/json")
-            .body(FileRepository::new().load().unwrap().to_json().unwrap())
-        }))
-        .resource("/app-static.html", |r| r.f(|_r| {
-            const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/www/app.html");
-            HttpResponse::Ok()
-            .content_type("text/html")
-            .body(CONTENT)
-        }))
-        .resource("/app.html", |r| r.f(|_r| {
-            let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-wasm/www/app.html").expect("Read error");
-            HttpResponse::Ok()
-            .content_type("text/html")
-            .body(content)
-        }))
-        .resource("/textglue_wasm.js", |r| r.f(|_r| {
-            const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm.js");
-            HttpResponse::Ok()
-            .content_type("application/javascript")
-            .body(CONTENT)
-        }))
-        .resource("/textglue_wasm_bg.wasm", |r| r.f(|_r| {
-            const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm_bg.wasm");
-            HttpResponse::Ok()
-            .content_type("application/wasm")
-            .body(CONTENT)
-        }))
-        .resource("/api/upload", |r| {
-                r.method(http::Method::GET).f(|_r| {"Upload"});
-                r.method(http::Method::POST).with(upload);
-        })
-        .resource("/api/upload-json", |r|
-                r.method(http::Method::POST).with(upload_json)
-        )
-        .handler(
-            "/js",
-            StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/js")
-                .unwrap()
-                .show_files_listing())
-        .handler(
-            "/css",
-            StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/css")
-                .unwrap()
-                .show_files_listing())
-        .resource("/index.html", |r| r.f(|_r| {
-            let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-app/dist/index.html").expect("Read error");
-            HttpResponse::Ok()
-            .content_type("text/html")
-            .body(content)
-        }))
-        .resource("/logo.png", |r| r.f(|_r| {
-            const CONTENT: &'static [u8] = include_bytes!("../../textglue-app/public/logo.png");
-            HttpResponse::Ok()
-            .content_type("image/png")
-            .body(CONTENT)
-        }))
+fn main() {
+    let matches = clap::App::new("TextGlue - simple text editor for writers")
+                          .version("1.0")
+                          .author("Orest Dubay <orest3.dubay@gmail.com>")
+                          .about("Repository: https://github.com/orest-d/textglue")
+                        .subcommand(SubCommand::with_name("ui")
+                                      .about("Start TextGlue UI server")
+                                      .arg(Arg::with_name("port")
+                                      .long("port")
+                                      .value_name("PORT")
+                                      .help("Port number")
+                                      .takes_value(true)))
+                          .get_matches();
 
-    )
-    .bind("127.0.0.1:8088")
-    .unwrap()
-    .run();
+    if let Some(uimatches) = matches.subcommand_matches("ui") {
+        let port = uimatches.value_of("port").unwrap();
+        server::new(|| App::with_state(FileRepository::new())
+            .resource("/", |r| r.f(index))
+            .resource("/api/db.json", |r| r.f(serve_database))
+            .resource("/api/dbnow.json", |r| r.f(|_r| {
+                HttpResponse::Ok()
+                .content_type("application/json")
+                .body(FileRepository::new().load().unwrap().to_json().unwrap())
+            }))
+            .resource("/app-static.html", |r| r.f(|_r| {
+                const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/www/app.html");
+                HttpResponse::Ok()
+                .content_type("text/html")
+                .body(CONTENT)
+            }))
+            .resource("/app.html", |r| r.f(|_r| {
+                let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-wasm/www/app.html").expect("Read error");
+                HttpResponse::Ok()
+                .content_type("text/html")
+                .body(content)
+            }))
+            .resource("/textglue_wasm.js", |r| r.f(|_r| {
+                const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm.js");
+                HttpResponse::Ok()
+                .content_type("application/javascript")
+                .body(CONTENT)
+            }))
+            .resource("/textglue_wasm_bg.wasm", |r| r.f(|_r| {
+                const CONTENT: &'static [u8] = include_bytes!("../../textglue-wasm/pkg/textglue_wasm_bg.wasm");
+                HttpResponse::Ok()
+                .content_type("application/wasm")
+                .body(CONTENT)
+            }))
+            .resource("/api/upload", |r| {
+                    r.method(http::Method::GET).f(|_r| {"Upload"});
+                    r.method(http::Method::POST).with(upload);
+            })
+            .resource("/api/upload-json", |r|
+                    r.method(http::Method::POST).with(upload_json)
+            )
+            .handler(
+                "/js",
+                StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/js")
+                    .unwrap()
+                    .show_files_listing())
+            .handler(
+                "/css",
+                StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/css")
+                    .unwrap()
+                    .show_files_listing())
+            .resource("/index.html", |r| r.f(|_r| {
+                let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-app/dist/index.html").expect("Read error");
+                HttpResponse::Ok()
+                .content_type("text/html")
+                .body(content)
+            }))
+            .resource("/logo.png", |r| r.f(|_r| {
+                const CONTENT: &'static [u8] = include_bytes!("../../textglue-app/public/logo.png");
+                HttpResponse::Ok()
+                .content_type("image/png")
+                .body(CONTENT)
+            }))
+
+        )
+        .bind(&format!("127.0.0.1:{}",port))
+        .unwrap()
+        .run();
+    }
 }

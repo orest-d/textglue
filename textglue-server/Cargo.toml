@@ -5,13 +5,14 @@ authors = ["Orest Dubay <orest3.dubay@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-serde = "1.0.89"
-serde_derive = "1.0.89"
-serde_json = "1.0.39"
+serde = "1.0.90"
+serde_derive = "1.0.90"
+serde_json = "1.0.9"
 serde_yaml = "0.8.8"
 actix = "0.7"
 actix-web = "0.7"
-futures = "0.1.25"
+futures = "0.1.26"
+clap = "2.9.3"
 
 [dependencies.textglue-lib]
 path = "../textglue-lib"
