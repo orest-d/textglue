@@ -312,8 +312,7 @@ fn main() {
                 HttpResponse::Ok()
                 .content_type("image/png")
                 .body(CONTENT)
-            }))
-
+            }))                
         )
         .bind(&format!("127.0.0.1:{}",port))
         .unwrap()

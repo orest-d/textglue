@@ -9,6 +9,7 @@ cp textglue-wasm/pkg/textglue_wasm_bg.wasm textglue-app/public
 cp textglue-wasm/pkg/textglue_wasm.js textglue-app/public
 cd textglue-app
 npm run build
+python3 dists.py
 cd ..
 cd textglue-server
 cargo build
