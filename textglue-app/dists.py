@@ -51,14 +51,13 @@ def rust_resource(url,path):
         json = "application/json",
         ico  = "image/x-icon"
         ).get(ext,"text/plain")
-    return f"""
-            .resource("{url}", |r| r.f(|_r| {{
+    return [f"""
+            "{url}" => {{
                 const CONTENT: &'static [u8] = include_bytes!("{abspath}");
                 HttpResponse::Ok()
-                .content_type("{mime}")
-                .body(CONTENT)
-            }}))
-    """
+                    .content_type("{mime}")
+                    .body(CONTENT)
+            }}"""]
 
 #print (files)
 
@@ -66,7 +65,7 @@ def change_name(name):
     return re.sub(r"\.[a-zA-Z0-9]+\.",".",name)
 
 def process(source, destination, prefix=""):
-    rust = "x"
+    rust = []
     files = (
         list(glob(f"{source}/*")) +
         list(glob(f"{source}/js/*")) +
@@ -113,9 +112,17 @@ def process(source, destination, prefix=""):
             rust += rust_resource(url,dst)
         else:
             print(f"UNKNOWN {f1}")
+    rust+=["""
+            _ => {
+                HttpResponse::NotFound()
+                    .content_type("text/plain")
+                    .body(format!("TextGlue webapp resource not found: {}",info.0))
+            }"""]
     return rust
 
 #process("dist","dist1")
-rust = process("dist","dist2/textglue","textglue/")
+matches = process("dist","dist2/textglue","textglue/")
+code = "    match info.0.as_str(){"+",\n".join(matches)+"\n    }\n"
+
 with open("resources.rs","w") as f:
-    f.write(rust)
+    f.write(code)

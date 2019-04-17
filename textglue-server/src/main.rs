@@ -236,6 +236,21 @@ fn serve_database(request:&HttpRequest<FileRepository>) -> HttpResponse{
     }
 }
 
+fn textglue_resources(info: actix_web::Path<(String,)>) -> HttpResponse{
+    println!("TEXTGLUE {}",info.0);
+    /*
+    match info.0.as_str(){
+       "abc" => HttpResponse::Ok()
+            .content_type("text/plain")
+            .body("ABC".to_string()),
+        _ => HttpResponse::Ok()
+        .content_type("text/plain")
+        .body(info.0.to_string())
+
+    }*/
+    include!("../../textglue-app/resources.rs")
+}
+
 fn main() {
     let matches = clap::App::new("TextGlue - simple text editor for writers")
                           .version("1.0")
@@ -291,6 +306,7 @@ fn main() {
             .resource("/api/upload-json", |r|
                     r.method(http::Method::POST).with(upload_json)
             )
+            .route("/textglue/{path:.*}", http::Method::GET, textglue_resources)
             .handler(
                 "/js",
                 StaticFiles::new("/home/orest/zlos/rust/textglue/textglue-app/dist/js")
