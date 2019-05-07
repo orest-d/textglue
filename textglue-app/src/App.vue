@@ -153,8 +153,8 @@ export default {
         this.chapters_id.push({...this.chapters[i],id:i});
       }
       this.selected_chapter_structure=this.$tg.get_chapter(this.selected_document,this.selected_chapter);
-      this.$forceUpdate();
       this.chapter_text = this.$tg.get_chapter_text(this.selected_document,this.selected_chapter,this.id_prefix,this.id_postfix);
+      this.$forceUpdate();
     },
     text_to_chapter(){
       this.$tg.set_chapter_text(this.selected_document,this.selected_chapter,this.id_prefix,this.id_postfix, this.chapter_text);

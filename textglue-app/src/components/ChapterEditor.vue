@@ -12,6 +12,11 @@
                         <v-list-tile-content>
                             <v-list-tile-title>{{metadata[item].name}} <em>({{item}})</em></v-list-tile-title>
                             <v-list-tile-sub-title>{{metadata[item].summary}}</v-list-tile-sub-title>
+                            <v-toolbar dense>
+                                <v-btn @click="remove(index)">Remove</v-btn>
+                                <v-btn @click="up(index)">Up</v-btn>
+                                <v-btn @click="down(index)">Down</v-btn>
+                            </v-toolbar>
                         </v-list-tile-content>
                     </v-list-tile>
                 </template>
@@ -46,9 +51,36 @@
     },
     methods: {
         add(){
+            this.chapter = this.$tg.get_chapter(this.document,this.chapter_number);
             this.chapter.snippets.push(this.add_snippet);
             this.$tg.set_chapter(this.document,this.chapter_number,this.chapter);
             this.update();
+        },
+        remove(index){
+//            this.chapter.snippets = this.chapter.snippets.filter(x => x!=id);
+            this.chapter.snippets.splice(index,1);
+            this.$tg.set_chapter(this.document,this.chapter_number,this.chapter);
+            this.update();
+        },
+        up(index){
+            console.log("up",index);
+            if (index>=1){
+                var id = this.chapter.snippets[index-1];
+                this.chapter.snippets[index-1]=this.chapter.snippets[index]
+                this.chapter.snippets[index]=id;
+                this.$tg.set_chapter(this.document,this.chapter_number,this.chapter);
+                this.update();
+            }
+        },
+        down(index){
+            console.log("down",index);
+            if (index<this.chapter.snippets.length-1){
+                var id = this.chapter.snippets[index+1];
+                this.chapter.snippets[index+1]=this.chapter.snippets[index]
+                this.chapter.snippets[index]=id;
+                this.$tg.set_chapter(this.document,this.chapter_number,this.chapter);
+                this.update();
+            }
         },
         update(){
             if (this.chapter_number<this.$tg.get_document(this.document).chapters.length){
