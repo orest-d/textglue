@@ -13,7 +13,7 @@ Vue.prototype.$http = axios;
 
 const run = async function () {
   console.log("run");
-  await Vue.prototype.$tg('textglue_wasm_bg.wasm');
+  await Vue.prototype.$tg('/textglue_wasm_bg.wasm');
   console.log("loaded");
   app = new Vue({
     router,

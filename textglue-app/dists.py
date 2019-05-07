@@ -30,9 +30,9 @@ def copy(path, target):
     print(f"COPY {source} -> {destination}")
     shutil.copy(source,destination)
     url=change_name(clean_path(path))
-    if url[0]!="/":
-        url="/"+url
-    url="/textglue"+url #TODO hack...
+#    if url[0]!="/":
+#        url="/"+url
+#    url="/textglue"+url #TODO hack...
     return rust_resource(url,destination)
 
 def rust_resource(url,path):
@@ -43,6 +43,7 @@ def rust_resource(url,path):
         txt  = "text/plain",
         html = "text/html",
         csv  = "text/csv",
+        css  = "text/css",
         png  = 'image/png',
         svg  = 'image/svg+xml',
         jpg  = 'image/jpeg',
@@ -51,6 +52,7 @@ def rust_resource(url,path):
         json = "application/json",
         ico  = "image/x-icon"
         ).get(ext,"text/plain")
+    print (f"  MIME {ext} -> {mime}")
     return [f"""
             "{url}" => {{
                 const CONTENT: &'static [u8] = include_bytes!("{abspath}");
@@ -106,9 +108,9 @@ def process(source, destination, prefix=""):
             with open(dst,"w") as f:
                 f.write(txt)
             url=change_name(clean_path(source))
-            if url[0]!="/":
-                url="/"+url
-            url="/textglue"+url #TODO hack...
+#            if url[0]!="/":
+#                url="/"+url
+#            url="/textglue"+url #TODO hack...
             rust += rust_resource(url,dst)
         else:
             print(f"UNKNOWN {f1}")

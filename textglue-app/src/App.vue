@@ -1,7 +1,7 @@
 <template>
   <v-app dark>
     <v-toolbar dense app>
-      <img src="logo.png" ></img>
+      <img src="/logo.png" ></img>
       <v-btn @click="ext=!ext"><v-icon>menu</v-icon></v-btn>
       <v-btn @click="mode='snippets'" :color="mode=='snippets'?'primary':''">Snippets</v-btn>
       <v-btn @click="mode='documents'" :color="mode=='documents'?'primary':''">Chapter</v-btn>
@@ -61,6 +61,7 @@
 -->
     <v-navigation-drawer v-if="mode=='snippets'" v-model="ext" app width="500">
       <v-container v-if="ext">
+        <v-btn @click="load_from_server()">Re-load from server</v-btn>
         <v-text-field v-model="snippet_name" label="Name"></v-text-field>
         <v-textarea v-model="snippet_summary" label="Summary"></v-textarea>
         <v-combobox v-model="snippet_tags" label="Tags" multiple chips></v-combobox>
