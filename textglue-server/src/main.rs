@@ -12,7 +12,7 @@ extern crate textglue_lib;
 extern crate clap;
 
 
-use clap::{Arg, SubCommand};
+use clap::{clap_app};
 use textglue_lib::*;
 use actix_web::{
     dev, error, http, multipart, server, App, Error, FutureResponse,
@@ -252,21 +252,30 @@ fn textglue_resources(info: actix_web::Path<(String,)>) -> HttpResponse{
 }
 
 fn main() {
-    let matches = clap::App::new("TextGlue - simple text editor for writers")
-                          .version("1.0")
-                          .author("Orest Dubay <orest3.dubay@gmail.com>")
-                          .about("Repository: https://github.com/orest-d/textglue")
-                        .subcommand(SubCommand::with_name("ui")
-                                      .about("Start TextGlue UI server")
-                                      .arg(Arg::with_name("port")
-                                      .long("port")
-                                      .value_name("PORT")
-                                      .help("Port number")
-                                      .takes_value(true)))
-                          .get_matches();
+    let matches = clap::clap_app!(myapp =>
+        (version: "1.0")
+        (author: "Orest Dubay <orest3.dubay@gmail.com>")
+        (about: "Repository: https://github.com/orest-d/textglue")
+        (@arg path: -p --path +takes_value "Path to the text repository")
+        (@subcommand ui =>
+            (about: "Start TextGlue UI server")
+            (@arg port: -p --port +takes_value "Port number")
+        )
+        (@subcommand mv =>
+            (about: "move old_snippet.txt new_snippet.txt")
+            (@arg src: +takes_value "source")
+            (@arg dst: +takes_value "destination")
+        )
+    ).get_matches();    
 
+    if let Some(uimatches) = matches.subcommand_matches("mv") {
+        let src = uimatches.value_of("src").unwrap();
+        let dst = uimatches.value_of("dst").unwrap();
+        println!("TextGlue move {} {}",src,dst);
+    }
     if let Some(uimatches) = matches.subcommand_matches("ui") {
-        let port = uimatches.value_of("port").unwrap();
+        let port = uimatches.value_of("port").unwrap_or("5000");
+        println!("Run TextGlue server on port {}",port);
         server::new(|| App::with_state(FileRepository::new())
             .resource("/", |r| r.f(index))
             .resource("/api/db.json", |r| r.f(serve_database))
