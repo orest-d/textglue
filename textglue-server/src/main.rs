@@ -26,13 +26,12 @@ use std::io::Write;
 use std::fs::{self, File};
 use std::path::{Path};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct FileRepository{
     snippet_file_postfix:String,
     metadata_file_postfix:String,
     document_file_postfix:String,
-    directory:String,
-    path:String
+    directory:String
 }
 
 impl FileRepository{
@@ -41,9 +40,15 @@ impl FileRepository{
             snippet_file_postfix:".txt".to_string(),
             metadata_file_postfix:".meta.yaml".to_string(),
             document_file_postfix:".doc.yaml".to_string(),
-            directory:"md3".to_string(),
-            path:"textglue.json".to_string(),
-        }
+            directory:".".to_string()        }
+    }
+
+    pub fn new_with_directory(dir:&str) -> FileRepository{
+        FileRepository{
+            snippet_file_postfix:".txt".to_string(),
+            metadata_file_postfix:".meta.yaml".to_string(),
+            document_file_postfix:".doc.yaml".to_string(),
+            directory:dir.to_string()        }
     }
 
     pub fn load(&self) -> textglue_lib::Result<Database>{
@@ -266,17 +271,33 @@ fn main() {
             (@arg src: +takes_value "source")
             (@arg dst: +takes_value "destination")
         )
+        (@subcommand archive =>
+            (about: "archive text repository to a json file")
+            (@arg dst: +takes_value "destination")
+        )
+        (@subcommand unarchive =>
+            (about: "reconstruct text repository from a json archive")
+            (@arg src: +takes_value "source")
+        )
     ).get_matches();    
-
+    let file_repo = FileRepository::new_with_directory(matches.value_of("path").unwrap_or("."));
+    println!("TextGlue text repository at {}",file_repo.directory);
     if let Some(uimatches) = matches.subcommand_matches("mv") {
         let src = uimatches.value_of("src").unwrap();
         let dst = uimatches.value_of("dst").unwrap();
         println!("TextGlue move {} {}",src,dst);
     }
+    if let Some(uimatches) = matches.subcommand_matches("archive") {
+        let dst = uimatches.value_of("dst").unwrap();
+        println!("TextGlue archive {}",dst);
+        let db = file_repo.load().expect("Failed to load text repository").to_json().expect("Failed to create json archive");
+        let mut file = File::create(dst).expect(&format!("Failed to create archive file {}",dst));
+        file.write_all(db.as_bytes()).expect(&format!("Failed to write archive file {}",dst));
+    }
     if let Some(uimatches) = matches.subcommand_matches("ui") {
         let port = uimatches.value_of("port").unwrap_or("5000");
         println!("Run TextGlue server on port {}",port);
-        server::new(|| App::with_state(FileRepository::new())
+        server::new(move || App::with_state(file_repo.clone())
             .resource("/", |r| r.f(index))
             .resource("/api/db.json", |r| r.f(serve_database))
             .resource("/api/dbnow.json", |r| r.f(|_r| {
