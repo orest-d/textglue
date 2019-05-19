@@ -229,10 +229,10 @@ export default {
     },
     snippet_name: {
       get() {
-        return this.$tg.get_metadata()[this.selected_snippet].name;
+        return this.selected_snippet_metadata.name;
       },
       set(value) {
-        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        var metadata=this.selected_snippet_metadata;
         metadata.name = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
@@ -250,12 +250,26 @@ export default {
       },
 
     },
+    selected_snippet_metadata: {
+      get:function(){
+        var m = this.$tg.get_metadata();
+        if ((m===undefined) || (m.length==0)){
+          this.new_snippet();
+          m = this.$tg.get_metadata();
+        }
+        m=Object.keys(m);
+        if ((this.selected_snippet===undefined) || (!(this.selected_snippet in m))){
+          this.selected_snippet=m[0]; 
+        }
+        return this.$tg.get_metadata()[this.selected_snippet];
+      }
+    },
     snippet_summary: {
       get() {
-        return this.$tg.get_metadata()[this.selected_snippet].summary;
+        return this.selected_snippet_metadata.summary;
       },
       set(value) {
-        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        var metadata=this.selected_snippet_metadata;
         metadata.summary = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
@@ -263,10 +277,10 @@ export default {
     },
     snippet_tags: {
       get() {
-        return this.$tg.get_metadata()[this.selected_snippet].tags;
+        return this.selected_snippet_metadata.tags;
       },
       set(value) {
-        var metadata=this.$tg.get_metadata()[this.selected_snippet];
+        var metadata=this.selected_snippet_metadata;
         metadata.tags = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);

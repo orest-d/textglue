@@ -143,7 +143,7 @@ impl FileRepository{
 }
 
 fn index<T>(_req: &HttpRequest<T>) -> &'static str {
-    "Hello world!"
+    "<head><meta http-equiv=\"refresh\" content=\"0; URL=/textglue/index.html\"/></head>"
 }
 
 
@@ -298,7 +298,7 @@ fn main() {
         let port = uimatches.value_of("port").unwrap_or("5000");
         println!("Run TextGlue server on port {}",port);
         server::new(move || App::with_state(file_repo.clone())
-            .resource("/", |r| r.f(index))
+            //.resource("/", |r| r.f(index))
             .resource("/api/db.json", |r| r.f(serve_database))
             .resource("/api/dbnow.json", |r| r.f(|_r| {
                 HttpResponse::Ok()
@@ -348,7 +348,13 @@ fn main() {
                     .unwrap()
                     .show_files_listing())
             .resource("/index.html", |r| r.f(|_r| {
-                let content = fs::read_to_string("/home/orest/zlos/rust/textglue/textglue-app/dist/index.html").expect("Read error");
+                let content = "<head><meta http-equiv=\"refresh\" content=\"0; URL=/textglue/index.html\"/></head>";
+                HttpResponse::Ok()
+                .content_type("text/html")
+                .body(content)
+            }))
+            .resource("/", |r| r.f(|_r| {
+                let content = "<head><meta http-equiv=\"refresh\" content=\"0; URL=/textglue/index.html\"/></head>";
                 HttpResponse::Ok()
                 .content_type("text/html")
                 .body(content)
