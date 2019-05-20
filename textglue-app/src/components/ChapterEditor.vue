@@ -1,7 +1,21 @@
 <template>
     <v-card>
-        <v-card-title>
-            
+        <v-card-title><h2>{{chapter.name}}</h2></v-card-title>
+  <v-layout row wrap>
+    <v-flex xs12>
+      <v-card v-for="(item, index) in chapter.snippets">
+        <v-card-title primary-title>
+            {{metadata[item].name}} <em>({{item}})</em>
+        </v-card-title>
+        <v-card-text>
+            {{metadata[item].summary}}
+            <v-btn fab small @click="remove(index)"><v-icon>remove_circle</v-icon></v-btn>
+            <v-btn fab small @click="up(index)"><v-icon>arrow_upward</v-icon></v-btn>
+            <v-btn fab small @click="down(index)"><v-icon>arrow_downward</v-icon></v-btn>
+        </v-card-text>
+      </v-card>
+    </v-flex>
+  </v-layout>            <!--
             <v-list two-line>
                 <v-list-tile>
                     <v-list-tile-title><h2>{{chapter.name}}</h2></v-list-tile-title>
@@ -12,16 +26,15 @@
                         <v-list-tile-content>
                             <v-list-tile-title>{{metadata[item].name}} <em>({{item}})</em></v-list-tile-title>
                             <v-list-tile-sub-title>{{metadata[item].summary}}</v-list-tile-sub-title>
-                            <v-toolbar dense>
-                                <v-btn @click="remove(index)">Remove</v-btn>
-                                <v-btn @click="up(index)">Up</v-btn>
-                                <v-btn @click="down(index)">Down</v-btn>
-                            </v-toolbar>
+                            <v-btn fab small @click="remove(index)"><v-icon>remove_circle</v-icon></v-btn>
+                            <v-btn fab small @click="up(index)"><v-icon>arrow_upward</v-icon></v-btn>
+                            <v-btn fab small @click="down(index)"><v-icon>arrow_downward</v-icon></v-btn>
                         </v-list-tile-content>
                     </v-list-tile>
                 </template>
                 <v-divider></v-divider>
-            </v-list>                
+            </v-list>
+            -->        
         </v-card-title>
         <SnippetSelector v-model="add_snippet" :snippet_ids="snippet_ids"></SnippetSelector>
         <v-card-actions>
