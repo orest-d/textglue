@@ -31,7 +31,6 @@
           <b>{{metadata[data.item].name}}</b>&nbsp;&nbsp;<em>({{data.item}})</em> 
         </template>
       </v-select>
-
       <v-select v-model="selected_document" :items="document_names" solo v-if="mode=='documents'">
       </v-select>
       <v-select v-model="selected_chapter" :items="chapters_id" item-value="id" solo v-if="mode=='documents'">
@@ -229,10 +228,11 @@ export default {
     },
     snippet_name: {
       get() {
+        console.log("snippet_name",this.selected_snippet, this.selected_snippet_metadata);
         return this.selected_snippet_metadata.name;
       },
       set(value) {
-        var metadata=this.selected_snippet_metadata;
+        var metadata=this.get_selected_snippet_metadata();
         metadata.name = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
@@ -257,11 +257,11 @@ export default {
           this.new_snippet();
           m = this.$tg.get_metadata();
         }
-        m=Object.keys(m);
-        if ((this.selected_snippet===undefined) || (!(this.selected_snippet in m))){
-          this.selected_snippet=m[0]; 
+        var k=Object.keys(m);
+        if ((this.selected_snippet===undefined) || (!k.includes(this.selected_snippet))){
+          this.selected_snippet=k[0]; 
         }
-        return this.$tg.get_metadata()[this.selected_snippet];
+        return m[this.selected_snippet];
       }
     },
     snippet_summary: {
