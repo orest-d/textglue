@@ -232,10 +232,12 @@ export default {
         return this.selected_snippet_metadata.name;
       },
       set(value) {
-        var metadata=this.get_selected_snippet_metadata();
+        var metadata=this.selected_snippet_metadata;
         metadata.name = value;
         this.metadata[this.selected_snippet]=metadata;
         this.$tg.set_metadata(this.selected_snippet, metadata);
+        console.log("set snippet name",this.selected_snippet, metadata.name);
+        console.log("  new snippet name is",this.selected_snippet_metadata.name);
       }
     },
     chapter_snippets:{
