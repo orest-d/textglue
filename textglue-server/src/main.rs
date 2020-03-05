@@ -266,6 +266,9 @@ fn main() {
             (about: "Start TextGlue UI server")
             (@arg port: -p --port +takes_value "Port number")
         )
+        (@subcommand tags =>
+            (about: "Show all tags")
+        )
         (@subcommand mv =>
             (about: "move old_snippet.txt new_snippet.txt")
             (@arg src: +takes_value "source")
@@ -286,6 +289,13 @@ fn main() {
         let src = uimatches.value_of("src").unwrap();
         let dst = uimatches.value_of("dst").unwrap();
         println!("TextGlue move {} {}",src,dst);
+    }
+    if let Some(uimatches) = matches.subcommand_matches("tags") {
+        let db:Database = file_repo.load().unwrap();
+        for tag in db.all_tags().iter(){
+            println!("  {}",tag);
+        }
+        println!("TextGlue tags");
     }
     if let Some(uimatches) = matches.subcommand_matches("archive") {
         let dst = uimatches.value_of("dst").unwrap();

@@ -5,7 +5,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
 
-use std::collections::{HashMap,HashSet};
+use std::collections::{HashMap,HashSet, BTreeSet};
 
 use std::str::FromStr;
 
@@ -148,6 +148,16 @@ fn next_snippet<'a>(text:&'a str, id_prefix:&str, id_postfix:&str) -> ChapterTex
 }
 */
 
+pub fn all_tags(metadata:&HashMap<String,Metadata>) -> BTreeSet<String>{
+    let mut set = BTreeSet::new();
+    for (_,v) in metadata.iter(){
+        for tag in v.tags.iter(){
+            set.insert(tag.to_string());
+        }
+    }
+    set
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database{
     pub snippets:HashMap<String,String>,
@@ -186,6 +196,10 @@ impl Database{
         else{
             id
         }
+    }
+
+    pub fn all_tags(&self) -> BTreeSet<String>{
+        all_tags(&self.metadata)
     }
 
     pub fn new_snippet_id(&mut self,name:&str)->String{
