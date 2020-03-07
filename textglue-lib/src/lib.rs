@@ -116,6 +116,19 @@ impl Metadata{
             tags: vec![]
         }
     }
+
+    pub fn rename_tag(&mut self, old_tag:&str, new_tag:&str){
+        self.tags = self.tags.iter().map(
+            |x| {                
+                if x==old_tag {
+                    new_tag.to_string()
+                }
+                else{
+                    x.to_string()
+                }
+            }
+        ).collect();
+    }
 }
 /*
 enum ChapterTextSnippet<'a>{
@@ -200,6 +213,12 @@ impl Database{
 
     pub fn all_tags(&self) -> BTreeSet<String>{
         all_tags(&self.metadata)
+    }
+
+    pub fn rename_tag(&mut self, old_tag:&str, new_tag:&str){
+       for (_,m) in self.metadata.iter_mut(){
+           m.rename_tag(old_tag, new_tag);
+       }
     }
 
     pub fn new_snippet_id(&mut self,name:&str)->String{

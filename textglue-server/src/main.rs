@@ -269,6 +269,11 @@ fn main() {
         (@subcommand tags =>
             (about: "Show all tags")
         )
+        (@subcommand renametags =>
+            (about: "renametags oldtag newtag")
+            (@arg oldtag: +takes_value "old")
+            (@arg newtag: +takes_value "new")
+        )
         (@subcommand mv =>
             (about: "move old_snippet.txt new_snippet.txt")
             (@arg src: +takes_value "source")
@@ -290,12 +295,20 @@ fn main() {
         let dst = uimatches.value_of("dst").unwrap();
         println!("TextGlue move {} {}",src,dst);
     }
+    if let Some(uimatches) = matches.subcommand_matches("renametags") {
+        let oldtag = uimatches.value_of("oldtag").unwrap();
+        let newtag = uimatches.value_of("newtag").unwrap();
+        println!("TextGlue renametags {} {}", oldtag, newtag);
+        let mut db:Database = file_repo.load().unwrap();
+        db.rename_tag(oldtag, newtag);
+        file_repo.save(&db).expect("Save error");
+    }
     if let Some(uimatches) = matches.subcommand_matches("tags") {
+        println!("TextGlue tags:");
         let db:Database = file_repo.load().unwrap();
         for tag in db.all_tags().iter(){
             println!("  {}",tag);
         }
-        println!("TextGlue tags");
     }
     if let Some(uimatches) = matches.subcommand_matches("archive") {
         let dst = uimatches.value_of("dst").unwrap();
