@@ -31,7 +31,9 @@ pub struct FileRepository{
     snippet_file_postfix:String,
     metadata_file_postfix:String,
     document_file_postfix:String,
-    directory:String
+    directory:String,
+    id_prefix:String,
+    id_postfix:String    
 }
 
 impl FileRepository{
@@ -40,7 +42,10 @@ impl FileRepository{
             snippet_file_postfix:".txt".to_string(),
             metadata_file_postfix:".meta.yaml".to_string(),
             document_file_postfix:".doc.yaml".to_string(),
-            directory:".".to_string()        }
+            directory:".".to_string(),
+            id_prefix:"-----=====##### ".to_string(),
+            id_postfix:" #####=====-----\n".to_string()    
+        }
     }
 
     pub fn new_with_directory(dir:&str) -> FileRepository{
@@ -48,7 +53,10 @@ impl FileRepository{
             snippet_file_postfix:".txt".to_string(),
             metadata_file_postfix:".meta.yaml".to_string(),
             document_file_postfix:".doc.yaml".to_string(),
-            directory:dir.to_string()        }
+            directory:dir.to_string(),
+            id_prefix:"-----=====##### ".to_string(),
+            id_postfix:" #####=====-----\n".to_string()
+        }
     }
 
     pub fn load(&self) -> textglue_lib::Result<Database>{
@@ -110,6 +118,20 @@ impl FileRepository{
             let path = dirpath.join(format!("{}{}",key,self.document_file_postfix));
             let mut file = File::create(&path)?;
             file.write_all(serde_yaml::to_string(&value)?.as_bytes())?;
+        }
+        Ok(())
+    }
+
+    pub fn create_chapters(&self, db:&Database, doc_id:&str, directory:&str) -> textglue_lib::Result<()>{
+        let dirpath = Path::new(directory);
+        fs::create_dir_all(dirpath)?;
+        if let Some(doc) = db.documents.get(doc_id){
+            for i in 0..(db.chapter_count(doc_id)){
+                let text = db.get_chapter_text(doc_id, i, &self.id_prefix, &self.id_postfix);
+                let path = dirpath.join(format!("{}_{}.txt",i+1, doc.chapters[i].name));
+                let mut file = File::create(&path)?;
+                file.write_all(text.as_bytes())?;
+            }
         }
         Ok(())
     }
@@ -269,6 +291,16 @@ fn main() {
         (@subcommand tags =>
             (about: "Show all tags")
         )
+        (@subcommand tagdoc =>
+            (about: "Create new tagdoc (tag document)")
+        )
+        (@subcommand documents =>
+            (about: "Show all documents")
+        )
+        (@subcommand createchapters =>
+            (about: "Create chapters doc")
+            (@arg doc: +takes_value "document ID")
+        )
         (@subcommand renametags =>
             (about: "renametags oldtag newtag")
             (@arg oldtag: +takes_value "old")
@@ -309,6 +341,25 @@ fn main() {
         for tag in db.all_tags().iter(){
             println!("  {}",tag);
         }
+    }
+    if let Some(uimatches) = matches.subcommand_matches("documents") {
+        println!("TextGlue documents:");
+        let db:Database = file_repo.load().unwrap();
+        for (k,v) in db.documents.iter(){
+            println!("  {}: {}",k,v.name);
+        }
+    }
+    if let Some(uimatches) = matches.subcommand_matches("createchapters") {
+        let doc = uimatches.value_of("doc").unwrap();
+        println!("TextGlue create chapters {}",doc);
+        let db:Database = file_repo.load().unwrap();
+        file_repo.create_chapters(&db, doc, doc);
+    }
+    if let Some(uimatches) = matches.subcommand_matches("tagdoc") {
+        println!("TextGlue tagdoc");
+        let mut db:Database = file_repo.load().unwrap();
+        db.new_tag_document("tagdoc");
+        file_repo.save(&db).expect("Save error");
     }
     if let Some(uimatches) = matches.subcommand_matches("archive") {
         let dst = uimatches.value_of("dst").unwrap();

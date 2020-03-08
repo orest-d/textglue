@@ -5,7 +5,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate serde_yaml;
 
-use std::collections::{HashMap,HashSet, BTreeSet};
+use std::collections::{HashMap,HashSet, BTreeSet, BTreeMap};
 
 use std::str::FromStr;
 
@@ -171,6 +171,18 @@ pub fn all_tags(metadata:&HashMap<String,Metadata>) -> BTreeSet<String>{
     set
 }
 
+pub fn all_tags_snippets(metadata:&HashMap<String,Metadata>) -> BTreeMap<String,Vec<String>>{
+    let mut tagmap = BTreeMap::new();
+    let tags = all_tags(metadata);
+    for tag in tags.into_iter(){
+        let snippets: Vec<String> = metadata.iter()
+        .filter(|(k,v)| v.tags.contains(&tag))
+        .map(|(k,v)| k.to_string()).collect();
+        tagmap.insert(tag,snippets);
+    }
+    tagmap
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Database{
     pub snippets:HashMap<String,String>,
@@ -213,6 +225,17 @@ impl Database{
 
     pub fn all_tags(&self) -> BTreeSet<String>{
         all_tags(&self.metadata)
+    }
+
+    pub fn new_tag_document(&mut self, name:&str){
+        let id = self.new_document_id(name);
+        let tagmap = all_tags_snippets(&self.metadata);
+        let mut doc = self.new_document(&id, name);
+
+        for (tag,snippets) in tagmap.into_iter(){
+            let mut chapter = doc.add_chapter(&tag);
+            chapter.snippets = snippets;
+        }
     }
 
     pub fn rename_tag(&mut self, old_tag:&str, new_tag:&str){
@@ -380,6 +403,14 @@ impl Database{
         );
         self
     }
+    pub fn chapter_count(&self, document_id:&str) -> usize {
+        if let Some(doc) = self.documents.get(document_id){
+            doc.chapters.len()
+        }
+        else{
+            0
+        }
+    }
 
     pub fn get_chapter_text(&self, document_id:&str, chapter_number:usize, id_prefix:&str, id_postfix:&str) -> String {
         if let Some(doc) = self.documents.get(document_id){
@@ -387,7 +418,7 @@ impl Database{
                 let snippets = &self.snippets;
                 ch.snippets.iter().map(
                     |id| format!("{}{}{}\n{}",id_prefix,id,id_postfix,snippets.get(id).unwrap_or(&"".to_string()))
-                ).collect::<Vec<String>>().join(", ")
+                ).collect::<Vec<String>>().join("")
             }
             else{
                 "Error 1".to_string()
