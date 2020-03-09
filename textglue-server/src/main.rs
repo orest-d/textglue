@@ -136,6 +136,31 @@ impl FileRepository{
         Ok(())
     }
 
+    pub fn from_chapters(&self, db:&mut Database, doc_id:&str, directory:&str) -> textglue_lib::Result<()>{
+        let all_files = files(directory);
+        for path in all_files{
+            let filename = Path::new(&path)
+                .file_name()
+                .ok_or(generic_error(&format!("Path error (F): {}",path)))?
+                .to_str().ok_or(generic_error(&format!("Path error (S): {}",path)))?;
+            if filename.ends_with(".txt"){
+                if let Some(prefix) = filename.split('_').next(){
+                    if let Ok(num) = prefix.parse::<usize>(){
+                        if num==0{
+                            println!("  Ignored: {}", path);
+                        }
+                        else{
+                            println!("  {}: {}",num,path);
+                            let text = fs::read_to_string(&path)?;
+                            db.set_chapter_text(doc_id, num-1, &self.id_prefix, &self.id_postfix, &text);
+                        }
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn remove_unused(&self,db:&Database) -> textglue_lib::Result<()>{
         let all_files = files(&self.directory);
         let keys:Vec<String> = db.keys().collect();
@@ -301,6 +326,10 @@ fn main() {
             (about: "Create chapters doc")
             (@arg doc: +takes_value "document ID")
         )
+        (@subcommand fromchapters =>
+            (about: "Update snippets and document from chapters. Chapters must be a folder.")
+            (@arg doc: +takes_value "document ID")
+        )
         (@subcommand renametags =>
             (about: "renametags oldtag newtag")
             (@arg oldtag: +takes_value "old")
@@ -354,6 +383,13 @@ fn main() {
         println!("TextGlue create chapters {}",doc);
         let db:Database = file_repo.load().unwrap();
         file_repo.create_chapters(&db, doc, doc);
+    }
+    if let Some(uimatches) = matches.subcommand_matches("fromchapters") {
+        let doc = uimatches.value_of("doc").unwrap();
+        println!("TextGlue from chapters {}",doc);
+        let mut db:Database = file_repo.load().unwrap();
+        file_repo.from_chapters(&mut db, doc, doc);
+        file_repo.save(&db).expect("Save error");
     }
     if let Some(uimatches) = matches.subcommand_matches("tagdoc") {
         println!("TextGlue tagdoc");
